@@ -1,0 +1,55 @@
+(*Este programa calcula la expansión perturbativa de la energía y fase del estado base del átomo de hidrógeno en campo magnético hasta orden m. Se utiliza el método de no-linearización en las variables (rho=s,r) *)
+ 
+(*Carga de Mathematica:  module load Mathematica/11.2 *)
+(*Para correr: math -noprompt -run < file.txt*)
+
+
+
+(*Autor: Juan Carlos de Valle 2019*)
+
+(*Orden deseado*)
+m = 100; 
+
+(*Comienzo del programa*)
+f[0] = r; 
+
+(*Constricción*)
+Do[
+   Subscript[Overscript[a, n], 0, 2*n + 1] = 0, 
+   {n, 1, m}
+]; 
+
+(*Definiciones*)
+f[n_] := 
+        Expand[Sum[(Subscript[Overscript[A, n], k, j]*r + Subscript[Overscript[B, n], k, j])*s^(2*(n - k))*r^(2*(k - j)), 
+        {j, 0, n - 1}, {k, j, n}]]; 
+
+Subscript[E, 0] = -1^2; 
+
+Q[1] := (1/4)*s^2; 
+
+Q[n_] := 
+        -Expand[Sum[D[f[k], s]*D[f[n - k], s] + 
+        D[f[k], r]*D[f[n - k], r] + (s/r)*(D[f[k], s]*D[f[n - k], r] + 
+        D[f[k], r]*D[f[n - k], s]), {k, 1, n - 1}]];
+
+eq[n_] := 
+         Expand[D[f[n], s, s] + ((2*s)/r)*D[f[n], s, r] + 
+         D[f[n], r, r] + (1/s - (2*s)/r)*D[f[n], s] + 
+         2*(1/r - 1)*D[f[n], r] - Subscript[E, n] + Q[n]];
+
+(*Lista con resultados*)
+Energy={};
+
+(*Resolución de ecuaciones*)
+Do[
+   sol = SolveAlways[eq[i] == 0, {r, s}];
+   Apply[Set, sol[[1]], {1}];
+   PrintTemporary[i]; 
+   AppendTo[Energy,{i,Subscript[E, i]}];
+   Export["Coefficients.dat", Energy],
+   {i, 1, m}
+];
+
+
+
